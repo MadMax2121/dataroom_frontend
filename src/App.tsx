@@ -1,12 +1,12 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
-import Dashboard from './pages/Dashboard';
-import DataRooms from './pages/DataRooms';
-import Documents from './pages/Documents';
-import Analytics from './pages/Analytics';
-import AccessLinks from './pages/AccessLinks';
-import Settings from './pages/Settings';
+import Dashboard from './components/pages/Dashboard';
+import DataRooms from './components/pages/DataRooms';
+import Documents from './components/pages/Documents';
+import Analytics from './components/pages/Analytics';
+import AccessLinks from './components/pages/AccessLinks';
+import Settings from './components/pages/Settings';
 
 function App() {
   return (
