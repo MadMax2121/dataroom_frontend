@@ -27,7 +27,7 @@ export const DraggableDocument: React.FC<DraggableDocumentProps> = ({
 
   return (
     <div
-      ref={drag}
+      ref={drag as unknown as React.LegacyRef<HTMLDivElement>}
       className={`flex items-center ${isDragging ? 'opacity-50' : ''}`}
     >
       <FileText className="w-5 h-5 text-gray-400 mr-3" />
