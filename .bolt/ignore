@@ -1,0 +1,27 @@
+# Dependencies
+node_modules
+
+# Next.js build output
+.next
+out
+
+# Other build artifacts
+dist
+coverage
+
+# Large/binary files
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.svg
+*.mp4
+*.mov
+*.pdf
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
