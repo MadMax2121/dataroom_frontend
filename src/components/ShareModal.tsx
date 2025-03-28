@@ -2,6 +2,14 @@
 
 import React, { useState } from 'react';
 import { X, Calendar, Lock, Eye, Download, MessageSquare, Shield, Mail, Plus, Check, AlertTriangle, Copy, Link as LinkIcon } from 'lucide-react';
+import { getAllUsers } from '@/lib/api';
+
+interface User {
+  id: number;
+  email: string;
+  firstName: string;
+  lastName: string;
+}
 
 interface ShareModalProps {
   link?: {
@@ -122,6 +130,27 @@ const ShareModal: React.FC<ShareModalProps> = ({ link, onClose }) => {
   const [message, setMessage] = useState('');
   const [showSuccess, setShowSuccess] = useState(false);
   const [generatedUrl, setGeneratedUrl] = useState('');
+  const [users, setUsers] = useState<User[]>([]);
+  const [selectedUsers, setSelectedUsers] = useState<number[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  React.useEffect(() => {
+    if (step === 2) {
+      fetchUsers();
+    }
+  }, [step]);
+
+  const fetchUsers = async () => {
+    try {
+      setLoading(true);
+      const response = await getAllUsers();
+      setUsers(response?.items || []);
+    } catch (error) {
+      console.error('Failed to fetch users:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleAddRecipient = () => {
     if (newRecipient && newRecipient.includes('@')) {

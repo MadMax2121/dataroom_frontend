@@ -1,14 +1,23 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useDrag } from 'react-dnd';
 import { FileText } from 'lucide-react';
+import { moveDocument } from '@/lib/api';
 
 interface DraggableDocumentProps {
   id: string;
   name: string;
   type: string;
   currentFolderId: string;
+}
+
+interface Document {
+  id: string | number;
+  name: string;
+  size: string;
+  type: string;
+  lastModified: string;
 }
 
 export const DraggableDocument: React.FC<DraggableDocumentProps> = ({
@@ -24,6 +33,23 @@ export const DraggableDocument: React.FC<DraggableDocumentProps> = ({
       isDragging: monitor.isDragging()
     })
   }));
+
+  const [isMoving, setIsMoving] = useState(false);
+  
+  const handleDragStart = (e: React.DragEvent) => {
+    e.dataTransfer.setData('documentId', id);
+  };
+  
+  const handleMoveDocument = async (documentId: number, folderId: number) => {
+    try {
+      setIsMoving(true);
+      await moveDocument(documentId, folderId);
+    } catch (error) {
+      console.error('Error moving document:', error);
+    } finally {
+      setIsMoving(false);
+    }
+  };
 
   return (
     <div

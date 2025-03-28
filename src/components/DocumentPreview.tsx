@@ -1,7 +1,7 @@
 'use client';
 
-import React from 'react';
-import { X, Download, Share2, FileText, Image as ImageIcon, File } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Download, Share2, FileText, Image as ImageIcon, File, Info } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
 import 'react-pdf/dist/esm/Page/TextLayer.css';
@@ -22,6 +22,9 @@ interface DocumentPreviewProps {
     name: string;
     type: string;
     size: string;
+    lastModified: string;
+    shared: boolean;
+    original_document?: any;
     file?: File;
     preview?: string;
   };
@@ -36,7 +39,8 @@ const DocumentPreview: React.FC<DocumentPreviewProps> = ({
   onDownload,
   onShare
 }) => {
-  const [error, setError] = React.useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [showDetails, setShowDetails] = useState<boolean>(false);
   const isPDF = document.type === 'PDF';
   const isImage = ['Image'].includes(document.type);
   const previewUrl = document.preview || (document.file ? URL.createObjectURL(document.file) : null);
@@ -51,6 +55,12 @@ const DocumentPreview: React.FC<DocumentPreviewProps> = ({
             <p className="text-sm text-gray-500">{document.size}</p>
           </div>
           <div className="flex items-center space-x-2">
+            <button
+              onClick={() => setShowDetails(!showDetails)}
+              className="p-2 text-gray-600 hover:text-gray-900 rounded-lg hover:bg-gray-100"
+            >
+              <Info className="w-5 h-5" />
+            </button>
             {onDownload && (
               <button
                 onClick={onDownload}
@@ -75,6 +85,21 @@ const DocumentPreview: React.FC<DocumentPreviewProps> = ({
             </button>
           </div>
         </div>
+
+        {/* Document details panel */}
+        {showDetails && document.original_document && (
+          <div className="mt-4 p-4 bg-gray-50 rounded">
+            <h3 className="text-sm font-semibold mb-2">Document Properties</h3>
+            <div className="text-xs space-y-1">
+              {Object.entries(document.original_document).map(([key, value]) => (
+                <div key={key} className="grid grid-cols-2">
+                  <span className="font-medium">{key}:</span>
+                  <span>{typeof value === 'object' ? JSON.stringify(value) : String(value)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Preview Content */}
         <div className="flex-1 overflow-auto p-6">
