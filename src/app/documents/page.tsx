@@ -176,7 +176,7 @@ const Documents = () => {
         }
         
         // 2. Convert to frontend format with simplified data mapping
-        const frontendFolders = folders.map(apiFolder => ({
+        const frontendFolders = folders.map((apiFolder: ApiFolder) => ({
           id: apiFolder.id.toString(),
           name: apiFolder.name,
           type: apiFolder.type as 'private' | 'team',
@@ -188,7 +188,7 @@ const Documents = () => {
         // First try to get documents already associated with folders
         const folderDocuments = new Map<string, Document[]>();
         
-        await Promise.all(frontendFolders.map(async (folder) => {
+        await Promise.all(frontendFolders.map(async (folder: Folder) => {
           try {
             const response = await getFolderDocuments(parseInt(folder.id));
             const docs = response?.documents || [];
@@ -196,7 +196,7 @@ const Documents = () => {
             console.log(`Documents for folder ${folder.id} - raw data:`, docs);
             
             // Create a simpler document mapping
-            folderDocuments.set(folder.id, docs.map(doc => {
+            folderDocuments.set(folder.id, docs.map((doc: ApiDocument) => {
               console.log('Processing document:', doc);
               
               // Check for timestamp properties
