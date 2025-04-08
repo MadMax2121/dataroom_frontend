@@ -61,7 +61,7 @@ export default function RegisterPage() {
   
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="w-full max-w-md p-6 bg-white rounded-lg shadow-md">
+      <div className="min-w-96 max-w-md p-6 bg-white rounded-lg shadow-md">
         <h2 className="text-2xl font-bold mb-6 text-center">Register</h2>
         
         {error && (
@@ -147,7 +147,7 @@ export default function RegisterPage() {
           <button
             type="submit"
             disabled={loading}
-            className={`w-full py-2 px-4 rounded text-white ${
+            className={`w-full py-2 px-6 rounded text-white ${
               loading ? 'bg-blue-300' : 'bg-blue-500 hover:bg-blue-600'
             }`}
           >

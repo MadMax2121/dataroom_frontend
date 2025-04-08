@@ -30,7 +30,8 @@ import {
   Plus,
   Trash2,
   Check,
-  X
+  X,
+  LogOut
 } from 'lucide-react';
 
 type Section = 'account' | 'organization' | 'billing' | 'security' | 'team';
@@ -98,135 +99,112 @@ const Settings = () => {
   ]);
 
   const renderAccountSettings = () => (
-    <div className="space-y-8">
-      {/* Profile Information */}
-      <div>
-        <h2 className="text-lg font-semibold text-gray-900 mb-6">Profile Information</h2>
-        <div className="flex items-start space-x-6 mb-6">
-          <div className="flex-shrink-0">
+    <div>
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h3 className="text-lg font-medium text-gray-900">Account Settings</h3>
+          <p className="text-sm text-gray-500">Manage your account information and preferences</p>
+        </div>
+        <button
+          onClick={() => {
+            localStorage.removeItem('authToken');
+            window.location.href = '/login';
+          }}
+          className="px-4 py-2 bg-red-50 text-red-700 rounded-lg hover:bg-red-100 flex items-center"
+        >
+          <LogOut className="w-4 h-4 mr-2" />
+          Logout
+        </button>
+      </div>
+      
+      <div className="space-y-6">
+        {/* Profile Information */}
+        <div className="bg-white rounded-lg border border-gray-200 p-6">
+          <div className="flex items-center space-x-4">
             <div className="relative">
-              <div className="w-24 h-24 rounded-full bg-gray-100 flex items-center justify-center">
+              <div className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center">
                 <UserCircle className="w-12 h-12 text-gray-400" />
               </div>
-              <button className="absolute bottom-0 right-0 p-1.5 bg-white rounded-full border border-gray-200 shadow-sm hover:bg-gray-50">
-                <Edit3 className="w-4 h-4 text-gray-500" />
+              <button className="absolute bottom-0 right-0 bg-white rounded-full p-1 border border-gray-200">
+                <Edit3 className="w-4 h-4 text-gray-600" />
               </button>
             </div>
-          </div>
-          <div className="flex-grow grid grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Full Name
-              </label>
-              <input
-                type="text"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Enter your name"
-              />
+              <h4 className="text-lg font-medium text-gray-900">John Doe</h4>
+              <p className="text-sm text-gray-500">john.doe@example.com</p>
             </div>
+          </div>
+        </div>
+
+        {/* Contact Information */}
+        <div className="bg-white rounded-lg border border-gray-200 p-6">
+          <h4 className="text-lg font-medium text-gray-900 mb-4">Contact Information</h4>
+          <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Email Address
-              </label>
-              <div className="flex items-center">
+              <label className="block text-sm font-medium text-gray-700">Email</label>
+              <div className="mt-1 flex items-center">
                 <input
                   type="email"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Enter your email"
+                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                  defaultValue="john.doe@example.com"
                 />
-                <span className="ml-2 text-sm text-green-600 flex items-center">
-                  <Check className="w-4 h-4 mr-1" />
-                  Verified
-                </span>
+                <button className="ml-2 p-2 text-gray-400 hover:text-gray-500">
+                  <Edit3 className="w-4 h-4" />
+                </button>
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Phone Number
-              </label>
-              <input
-                type="tel"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Enter your phone number"
-              />
+              <label className="block text-sm font-medium text-gray-700">Phone</label>
+              <div className="mt-1 flex items-center">
+                <input
+                  type="tel"
+                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                  defaultValue="+1 (555) 123-4567"
+                />
+                <button className="ml-2 p-2 text-gray-400 hover:text-gray-500">
+                  <Edit3 className="w-4 h-4" />
+                </button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Account Preferences */}
-      <div>
-        <h2 className="text-lg font-semibold text-gray-900 mb-6">Account Preferences</h2>
-        <div className="grid grid-cols-2 gap-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Language
-            </label>
-            <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-              <option value="en">English (US)</option>
-              <option value="es">Español</option>
-              <option value="fr">Français</option>
-              <option value="de">Deutsch</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Time Zone
-            </label>
-            <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-              <option value="PT">Pacific Time (PT)</option>
-              <option value="MT">Mountain Time (MT)</option>
-              <option value="CT">Central Time (CT)</option>
-              <option value="ET">Eastern Time (ET)</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
-      {/* Notification Preferences */}
-      <div>
-        <h2 className="text-lg font-semibold text-gray-900 mb-6">Notification Preferences</h2>
-        <div className="space-y-4">
-          <div className="flex items-center justify-between p-4 bg-white border border-gray-200 rounded-lg">
-            <div className="flex items-center">
-              <Mail className="w-5 h-5 text-gray-400 mr-3" />
+        {/* Notification Preferences */}
+        <div className="bg-white rounded-lg border border-gray-200 p-6">
+          <h4 className="text-lg font-medium text-gray-900 mb-4">Notification Preferences</h4>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-900">Email Notifications</p>
-                <p className="text-sm text-gray-500">Receive updates about your account via email</p>
+                <p className="text-sm text-gray-500">Receive updates about your account</p>
               </div>
+              <button className="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent bg-blue-600 transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                <span className="sr-only">Use setting</span>
+                <span className="translate-x-5 pointer-events-none relative inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out">
+                  <span className="absolute inset-0 flex h-full w-full items-center justify-center transition-opacity duration-200 ease-in-out" aria-hidden="true">
+                    <svg className="h-3 w-3 text-blue-600" fill="currentColor" viewBox="0 0 12 12">
+                      <path d="M3.707 5.293a1 1 0 00-1.414 1.414l1.414-1.414zM5 8l-.707.707a1 1 0 001.414 0L5 8zm4.707-3.293a1 1 0 00-1.414-1.414l1.414 1.414zm-7.414 2l2 2 1.414-1.414-2-2-1.414 1.414zm3.414 2l4-4-1.414-1.414-4 4 1.414 1.414z" />
+                    </svg>
+                  </span>
+                </span>
+              </button>
             </div>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input type="checkbox" className="sr-only peer" defaultChecked />
-              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-            </label>
-          </div>
-
-          <div className="flex items-center justify-between p-4 bg-white border border-gray-200 rounded-lg">
-            <div className="flex items-center">
-              <Bell className="w-5 h-5 text-gray-400 mr-3" />
+            <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-900">Push Notifications</p>
-                <p className="text-sm text-gray-500">Get notified about important updates</p>
+                <p className="text-sm text-gray-500">Receive push notifications on your device</p>
               </div>
+              <button className="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent bg-gray-200 transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                <span className="sr-only">Use setting</span>
+                <span className="translate-x-5 pointer-events-none relative inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out">
+                  <span className="absolute inset-0 flex h-full w-full items-center justify-center transition-opacity duration-200 ease-in-out" aria-hidden="true">
+                    <svg className="h-3 w-3 text-gray-400" fill="currentColor" viewBox="0 0 12 12">
+                      <path d="M3.707 5.293a1 1 0 00-1.414 1.414l1.414-1.414zM5 8l-.707.707a1 1 0 001.414 0L5 8zm4.707-3.293a1 1 0 00-1.414-1.414l1.414 1.414zm-7.414 2l2 2 1.414-1.414-2-2-1.414 1.414zm3.414 2l4-4-1.414-1.414-4 4 1.414 1.414z" />
+                    </svg>
+                  </span>
+                </span>
+              </button>
             </div>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input type="checkbox" className="sr-only peer" defaultChecked />
-              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-            </label>
-          </div>
-
-          <div className="flex items-center justify-between p-4 bg-white border border-gray-200 rounded-lg">
-            <div className="flex items-center">
-              <FileText className="w-5 h-5 text-gray-400 mr-3" />
-              <div>
-                <p className="text-sm font-medium text-gray-900">Weekly Reports</p>
-                <p className="text-sm text-gray-500">Receive weekly activity summaries</p>
-              </div>
-            </div>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input type="checkbox" className="sr-only peer" />
-              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-            </label>
           </div>
         </div>
       </div>
