@@ -2,9 +2,8 @@
 const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
-  // Adjust the basePath if your repository is named something other than your username.github.io
-  // For example, if your repo is "my-project", set basePath: '/my-project'
-  basePath: process.env.NODE_ENV === 'production' ? '/project%206%20nextjs' : '',
+  // On Vercel, we don't need a basePath
+  basePath: '',
   images: {
     unoptimized: true,
   },
