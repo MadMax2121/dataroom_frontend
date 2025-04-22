@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { getCurrentUser } from '@/lib/api';
+import { useSession } from 'next-auth/react';
 
 interface AuthGuardProps {
   children: React.ReactNode;
@@ -10,49 +10,25 @@ interface AuthGuardProps {
 
 export default function AuthGuard({ children }: AuthGuardProps) {
   const router = useRouter();
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const { data: session, status } = useSession();
   
   useEffect(() => {
-    const verifyAuth = async () => {
-      // Check if token exists
-      const token = localStorage.getItem('authToken');
-      
-      if (!token) {
-        router.push('/login');
-        return;
-      }
-      
-      try {
-        // Verify token by fetching current user
-        const response = await getCurrentUser();
-        
-        if (response.status === 200) {
-          setIsAuthenticated(true);
-        } else {
-          // Invalid token
-          localStorage.removeItem('authToken');
-          router.push('/login');
-        }
-      } catch (error) {
-        console.error('Authentication error:', error);
-        localStorage.removeItem('authToken');
-        router.push('/login');
-      } finally {
-        setLoading(false);
-      }
-    };
+    if (status === 'loading') {
+      // Session is being fetched
+      return;
+    }
     
-    verifyAuth();
-  }, [router]);
+    if (status === 'unauthenticated') {
+      // No active session, redirect to login
+      router.push('/login');
+    }
+  }, [status, router]);
   
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500"></div>
-      </div>
-    );
+  // Show loading state while checking session
+  if (status === 'loading') {
+    return <div>Loading...</div>;
   }
   
-  return isAuthenticated ? <>{children}</> : null;
+  // Only render children if authenticated
+  return session ? <>{children}</> : null;
 } 

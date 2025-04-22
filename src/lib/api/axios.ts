@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { getSession } from 'next-auth/react';
 
 // Create a custom axios instance
 const apiClient = axios.create({
@@ -13,7 +14,7 @@ const apiClient = axios.create({
 
 // Add a request interceptor
 apiClient.interceptors.request.use(
-  (config) => {
+  async (config) => {
     // Log the request
     console.log('API Request:', {
       method: config.method?.toUpperCase(),
@@ -22,12 +23,12 @@ apiClient.interceptors.request.use(
       data: config.data
     });
     
-    // Get token from local storage before sending the request
-    const token = typeof localStorage !== 'undefined' ? localStorage.getItem('authToken') : null;
+    // Get token from NextAuth session
+    const session = await getSession();
     
     // If token exists, add it to the headers
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    if (session?.accessToken) {
+      config.headers.Authorization = `Bearer ${session.accessToken}`;
     }
     
     return config;
@@ -62,13 +63,10 @@ apiClient.interceptors.response.use(
     
     // Handle authentication errors
     if (error.response?.status === 401) {
-      // Clear authentication data
-      if (typeof localStorage !== 'undefined') {
-        localStorage.removeItem('authToken');
-      }
+      // No need to clear local storage - let NextAuth handle session management
       
       // Redirect to login page if needed
-      // You can implement redirect logic here
+      window.location.href = '/login';
     }
     
     return Promise.reject(error);

@@ -33,6 +33,7 @@ import {
   X,
   LogOut
 } from 'lucide-react';
+import { signOut } from 'next-auth/react';
 
 type Section = 'account' | 'organization' | 'billing' | 'security' | 'team';
 
@@ -106,10 +107,7 @@ const Settings = () => {
           <p className="text-sm text-gray-500">Manage your account information and preferences</p>
         </div>
         <button
-          onClick={() => {
-            localStorage.removeItem('authToken');
-            window.location.href = '/login';
-          }}
+          onClick={() => signOut({ callbackUrl: '/login' })}
           className="px-4 py-2 bg-red-50 text-red-700 rounded-lg hover:bg-red-100 flex items-center"
         >
           <LogOut className="w-4 h-4 mr-2" />

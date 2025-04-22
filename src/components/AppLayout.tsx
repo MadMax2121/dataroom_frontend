@@ -1,7 +1,8 @@
 'use client';
 
-import React, { ReactNode, useEffect, useState } from 'react';
+import React, { ReactNode } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import Sidebar from './Sidebar';
 
 interface AppLayoutProps {
@@ -11,8 +12,7 @@ interface AppLayoutProps {
 const AppLayout = ({ children }: AppLayoutProps) => {
   const pathname = usePathname();
   const router = useRouter();
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const { data: session, status } = useSession();
   
   // Check if we're on authentication pages
   const isAuthPage = 
@@ -20,26 +20,8 @@ const AppLayout = ({ children }: AppLayoutProps) => {
     pathname === '/register' || 
     pathname === '/forgot-password';
     
-  useEffect(() => {
-    // Check authentication status
-    const token = localStorage.getItem('authToken');
-    setIsAuthenticated(!!token);
-    
-    // If user is authenticated and on auth page, redirect to home
-    if (token && isAuthPage) {
-      router.replace('/');
-    }
-    
-    // If user is not authenticated and not on auth page, redirect to login
-    if (!token && !isAuthPage) {
-      router.replace('/login');
-    }
-    
-    setIsLoading(false);
-  }, [pathname, router, isAuthPage]);
-
   // Show loading state
-  if (isLoading) {
+  if (status === 'loading') {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-gray-500">Loading...</div>
@@ -59,7 +41,7 @@ const AppLayout = ({ children }: AppLayoutProps) => {
   }
 
   // Show full layout for authenticated users
-  if (isAuthenticated) {
+  if (status === 'authenticated') {
     return (
       <div className="flex min-h-screen bg-gray-50">
         <Sidebar />

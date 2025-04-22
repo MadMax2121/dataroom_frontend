@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { login } from '@/lib/api';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { signIn } from 'next-auth/react';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -10,35 +10,6 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const redirectTo = searchParams.get('redirectTo');
-  
-  // Check if already logged in
-  useEffect(() => {
-    const token = localStorage.getItem('authToken');
-    if (token) {
-      router.replace('/');
-    }
-  }, [router]);
-  
-  useEffect(() => {
-    // Save current path if user navigated here from another page
-    if (typeof window !== 'undefined' && !redirectTo) {
-      const referrer = document.referrer;
-      if (referrer && referrer.includes(window.location.host)) {
-        // Only save internal redirects, not external ones
-        try {
-          const url = new URL(referrer);
-          const path = url.pathname;
-          if (path && path !== '/login' && path !== '/register') {
-            localStorage.setItem('lastVisitedPage', path);
-          }
-        } catch (e) {
-          console.error('Error parsing referrer URL:', e);
-        }
-      }
-    }
-  }, [redirectTo]);
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,25 +17,21 @@ export default function LoginPage() {
     setLoading(true);
     
     try {
-      const response = await login({ email, password });
+      const result = await signIn('credentials', {
+        redirect: false,
+        email,
+        password,
+      });
       
-      // Store the token
-      localStorage.setItem('authToken', response.token);
-      
-      // Redirect to the specified page or last visited page or dashboard
-      if (redirectTo) {
-        router.push(redirectTo);
+      if (!result?.error) {
+        // Successful login
+        router.push('/');
       } else {
-        const lastPage = localStorage.getItem('lastVisitedPage');
-        if (lastPage) {
-          router.push(lastPage);
-        } else {
-          router.push('/'); // Go to dashboard
-        }
+        // Failed login
+        setError('Invalid email or password');
       }
     } catch (err: any) {
-      console.error('Login error:', err);
-      setError(err.message || 'Login failed. Please check your credentials.');
+      setError('Login failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -115,11 +82,9 @@ export default function LoginPage() {
         <button
           type="submit"
           disabled={loading}
-          className={`w-full py-2 px-4 rounded-md text-white font-medium ${
-            loading ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
-          }`}
+          className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
         >
-          {loading ? 'Signing in...' : 'Sign In'}
+          {loading ? 'Signing in...' : 'Sign in'}
         </button>
       </form>
       
