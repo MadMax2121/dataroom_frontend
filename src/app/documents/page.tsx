@@ -184,69 +184,55 @@ const Documents = () => {
           originalFolder: apiFolder
         }));
         
-        // 3. Load and organize documents (single API call instead of one per folder)
-        // First try to get documents already associated with folders
+        // 3. Load all documents in a single call
+        const allDocsResponse = await getDocuments();
+        console.log('All documents response:', allDocsResponse);
+        
+        const allDocs = allDocsResponse?.items || [];
+        
+        // Create a map of folder ID to array of documents
         const folderDocuments = new Map<string, Document[]>();
         
-        await Promise.all(frontendFolders.map(async (folder: Folder) => {
-          try {
-            const response = await getFolderDocuments(parseInt(folder.id));
-            const docs = response?.documents || [];
-            
-            console.log(`Documents for folder ${folder.id} - raw data:`, docs);
-            
-            // Create a simpler document mapping
-            folderDocuments.set(folder.id, docs.map((doc: ApiDocument) => {
-              console.log('Processing document:', doc);
-              
-              // Check for timestamp properties
-              const created_at = getProperty(doc, 'created_at');
-              const updated_at = getProperty(doc, 'updated_at');
-              
-              // Use the most recent timestamp
-              let timestamp = updated_at || created_at;
-              
-              return {
-                id: getProperty(doc, 'id')?.toString() || '0',
-                name: getProperty(doc, 'title') || getProperty(doc, 'name') || 'Untitled',
-                type: getProperty(doc, 'file_type') || getFileExtension(getProperty(doc, 'title')) || 'Unknown',
-                size: formatFileSize(getProperty(doc, 'file_size')),
-                lastModified: formatRelativeTime(timestamp),
-                shared: false,
-                original_document: doc
-              };
-            }));
-          } catch (err) {
-            console.error(`Error loading documents for folder ${folder.id}:`, err);
-            folderDocuments.set(folder.id, []);
+        // Initialize empty arrays for each folder
+        frontendFolders.forEach((folder: Folder) => {
+          folderDocuments.set(folder.id, []);
+        });
+        
+        // Process each document and add it to the appropriate folder
+        allDocs.forEach((doc: ApiDocument) => {
+          console.log('Processing document:', doc);
+          
+          // Convert API document to frontend format
+          const frontendDoc = mapApiDocumentToFrontend(doc);
+          
+          // Get the folder ID from the document
+          const folderId = doc.folder_id?.toString();
+          
+          // If the document has a folder ID and the folder exists in our map, add it
+          if (folderId && folderDocuments.has(folderId)) {
+            folderDocuments.get(folderId)?.push(frontendDoc);
           }
-        }));
+        });
         
         // Assign documents to folders
-        frontendFolders.forEach(folder => {
+        frontendFolders.forEach((folder: Folder) => {
           folder.documents = folderDocuments.get(folder.id) || [];
         });
         
-        // Check if we found any documents in folders
-        const totalFolderDocs = frontendFolders.reduce(
-          (sum, folder) => sum + folder.documents.length, 0);
-          
-        // Do not automatically associate documents with the first folder
-        // Just set the folders without modifying document associations
+        // Set folders and active folder
         setFolders(frontendFolders);
-        
-        // Set the active folder to the first one if we have folders
         if (frontendFolders.length > 0) {
           setActiveFolder(frontendFolders[0].id);
         }
+        
+        setLoading(false);
       } catch (err: any) {
         console.error('Error loading folders and documents:', err);
         setError(err.message || 'Failed to load folders and documents');
-      } finally {
         setLoading(false);
       }
     };
-    
+
     fetchData();
   }, []);
 
@@ -417,10 +403,12 @@ const Documents = () => {
       }
       
       // Associate with active folder
-      await moveDocument(
+      console.log(`Moving document ${newDocument.id} to folder ${activeFolder}`);
+      const moveResult = await moveDocument(
         newDocument.id,
         parseInt(activeFolder)
       );
+      console.log('Move document result:', moveResult);
       
       // Create a simplified document object for the UI
       const frontendDoc: Document = {

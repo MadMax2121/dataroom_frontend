@@ -1,11 +1,29 @@
-// Export all API functions directly
-export * from './apiClient';
+// Export legacy client - to be removed in future updates
+export { axiosClient } from './apiClient';
+
+// Export the NextAuth API services
+export { 
+  userApi, 
+  documentApi, 
+  folderApi,
+  // Utilities
+  constructUrl
+} from './nextAuthApi';
+
+// Export types
+export type { 
+  Document,
+  Folder,
+  User,
+  LoginRequest,
+  RegisterRequest,
+  PaginatedResponse
+} from './nextAuthApi';
 
 // Export the client for advanced usage scenarios
-export { default as axiosClient } from './apiClient';
+export { default as api } from './nextAuthClient';
 
-// NOTE: When using these functions, remember that they return the axios response directly.
-// You'll need to access the data property to get the actual response data:
+// NOTE: When using these API functions, they return processed data objects.
 // Example:
-// const response = await login(data);
-// const userData = response.data;
+// const userData = await userApi.getCurrent();
+// console.log(userData);
