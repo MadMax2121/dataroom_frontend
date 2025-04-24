@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { removeEmptyProps } from './helpers';
+import { getSession } from 'next-auth/react';
 
 // Create axios instances
 export const axiosBackendInstance = axios.create({
@@ -20,13 +21,13 @@ export const axiosClient = axios.create({
 
 // Add a request interceptor
 axiosClient.interceptors.request.use(
-  (config) => {
-    // Get token from local storage before sending the request
-    const token = typeof localStorage !== 'undefined' ? localStorage.getItem('authToken') : null;
+  async (config) => {
+    // Get token from NextAuth session
+    const session = await getSession();
     
     // If token exists, add it to the headers
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    if (session?.accessToken) {
+      config.headers.Authorization = `Bearer ${session.accessToken}`;
     }
     
     return config;
@@ -42,11 +43,6 @@ axiosClient.interceptors.response.use(
   (error) => {
     // Handle authentication errors
     if (error.response?.status === 401) {
-      // Clear authentication data
-      if (typeof localStorage !== 'undefined') {
-        localStorage.removeItem('authToken');
-      }
-      
       // Redirect to login page
       window.location.href = '/login';
     }
@@ -216,19 +212,24 @@ export const deleteDocument = (documentId: number | string) =>
 export const downloadDocument = (documentId: number | string) => {
   console.log(`Preparing to download document ${documentId}`);
   
-  // Create a direct link to the download URL rather than using axios
-  const token = localStorage.getItem('authToken');
+  // Get the base URL
   const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
-  
-  // Add token as query parameter for direct download
-  const downloadUrl = `${baseUrl}/documents/${documentId}/download${token ? `?token=${token}` : ''}`;
+  const downloadUrl = `${baseUrl}/documents/${documentId}/download`;
   
   // For binary downloads, it's often more reliable to let the browser handle the download directly
-  return new Promise((resolve, reject) => {
+  return new Promise(async (resolve, reject) => {
     try {
+      // Get token from NextAuth session
+      const session = await getSession();
+      
       // Create a hidden link and trigger it
       const link = document.createElement('a');
-      link.href = downloadUrl;
+      
+      // Add token as query parameter for direct download if available
+      link.href = session?.accessToken 
+        ? `${downloadUrl}?token=${session.accessToken}` 
+        : downloadUrl;
+        
       link.setAttribute('download', ''); // Let the server set the filename
       
       // Attach to document, click, and clean up

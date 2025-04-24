@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
-import { Upload, FileText, Search, Plus, Trash2 } from 'lucide-react';
+import { Upload, FileText, Search, Plus, Trash2, Loader } from 'lucide-react';
 import { DroppableFolder } from '@/components/DroppableFolder';
 import { DraggableDocument } from '@/components/DraggableDocument';
 import DocumentPreview from '@/components/DocumentPreview';
@@ -166,14 +166,7 @@ const Documents = () => {
         const allDocuments = documentsResponse?.items || [];
         let folders = foldersResponse?.folders || [];
         
-        // Create a default folder if none exist
-        if (folders.length === 0) {
-          const newFolderResponse = await createFolder({
-            name: 'My Documents',
-            type: 'private'
-          });
-          folders = [newFolderResponse?.folder];
-        }
+        console.log(`Found ${folders.length} folders`);
         
         // 2. Convert to frontend format with simplified data mapping
         const frontendFolders = folders.map((apiFolder: ApiFolder) => ({
@@ -223,13 +216,13 @@ const Documents = () => {
         }));
         
         // Assign documents to folders
-        frontendFolders.forEach(folder => {
+        frontendFolders.forEach((folder: Folder) => {
           folder.documents = folderDocuments.get(folder.id) || [];
         });
         
         // Check if we found any documents in folders
         const totalFolderDocs = frontendFolders.reduce(
-          (sum, folder) => sum + folder.documents.length, 0);
+          (sum: number, folder: Folder) => sum + folder.documents.length, 0);
           
         // Do not automatically associate documents with the first folder
         // Just set the folders without modifying document associations
@@ -370,6 +363,13 @@ const Documents = () => {
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
+      // Check if any folders exist
+      if (folders.length === 0) {
+        alert('Please create a folder first before uploading files.');
+        setShowNewFolderDialog(true);
+        return;
+      }
+      
       setSelectedFile(e.target.files[0]);
       setUploadTitle(e.target.files[0].name);
       setUploadModalOpen(true);
@@ -469,8 +469,15 @@ const Documents = () => {
 
   const activeDocuments = folders.find(f => f.id === activeFolder)?.documents || [];
 
-  if (loading && folders.length === 0) {
-    return <div className="p-6 text-center">Loading documents...</div>;
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-center">
+          <Loader className="w-12 h-12 animate-spin mx-auto mb-4 text-blue-600" />
+          <p className="text-gray-600">Loading your documents...</p>
+        </div>
+      </div>
+    );
   }
 
   if (error) {
@@ -504,22 +511,28 @@ const Documents = () => {
               New Folder
             </button>
 
-            <div className="space-y-3">
-              {folders.map(folder => (
-                <DroppableFolder
-                  key={folder.id}
-                  id={folder.id}
-                  name={folder.name}
-                  type={folder.type}
-                  documentsCount={folder.documents.length}
-                  isActive={activeFolder === folder.id}
-                  onDrop={handleDrop}
-                  onClick={() => setActiveFolder(folder.id)}
-                  onSettingsClick={() => {}}
-                  onDeleteClick={() => handleDeleteFolder(folder.id)}
-                />
-              ))}
-            </div>
+            {folders.length === 0 ? (
+              <div className="p-4 text-center text-gray-500 border border-gray-200 rounded-xl">
+                No folders created yet. Create a folder to organize your documents.
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {folders.map(folder => (
+                  <DroppableFolder
+                    key={folder.id}
+                    id={folder.id}
+                    name={folder.name}
+                    type={folder.type}
+                    documentsCount={folder.documents.length}
+                    isActive={activeFolder === folder.id}
+                    onDrop={handleDrop}
+                    onClick={() => setActiveFolder(folder.id)}
+                    onSettingsClick={() => {}}
+                    onDeleteClick={() => handleDeleteFolder(folder.id)}
+                  />
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Documents List */}
@@ -536,45 +549,58 @@ const Documents = () => {
             </div>
 
             <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="text-left text-sm text-gray-500 bg-gray-50">
-                    <th className="px-6 py-3">Name</th>
-                    <th className="px-6 py-3">Type</th>
-                    <th className="px-6 py-3">Size</th>
-                    <th className="px-6 py-3">Last Modified</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {activeDocuments.length === 0 ? (
-                    <tr>
-                      <td colSpan={4} className="px-6 py-8 text-center text-gray-500">
-                        No documents in this folder. Upload a file to get started.
-                      </td>
+              {folders.length === 0 ? (
+                <div className="p-8 text-center text-gray-500">
+                  <FileText className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                  <p className="mb-2">Create a folder to start organizing your documents</p>
+                  <button
+                    onClick={() => setShowNewFolderDialog(true)}
+                    className="px-4 py-2 mt-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  >
+                    Create First Folder
+                  </button>
+                </div>
+              ) : (
+                <table className="w-full">
+                  <thead>
+                    <tr className="text-left text-sm text-gray-500 bg-gray-50">
+                      <th className="px-6 py-3">Name</th>
+                      <th className="px-6 py-3">Type</th>
+                      <th className="px-6 py-3">Size</th>
+                      <th className="px-6 py-3">Last Modified</th>
                     </tr>
-                  ) : (
-                    activeDocuments.map((doc) => (
-                      <tr
-                        key={doc.id}
-                        className="border-t border-gray-200 hover:bg-gray-50 cursor-pointer"
-                        onClick={() => handlePreview(doc)}
-                      >
-                        <td className="px-6 py-4">
-                          <DraggableDocument
-                            id={doc.id}
-                            name={doc.name}
-                            type={doc.type}
-                            currentFolderId={activeFolder}
-                          />
+                  </thead>
+                  <tbody>
+                    {activeDocuments.length === 0 ? (
+                      <tr>
+                        <td colSpan={4} className="px-6 py-8 text-center text-gray-500">
+                          No documents in this folder. Upload a file to get started.
                         </td>
-                        <td className="px-6 py-4 text-sm text-gray-500">{doc.type}</td>
-                        <td className="px-6 py-4 text-sm text-gray-500">{doc.size}</td>
-                        <td className="px-6 py-4 text-sm text-gray-500">{doc.lastModified}</td>
                       </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
+                    ) : (
+                      activeDocuments.map((doc) => (
+                        <tr
+                          key={doc.id}
+                          className="border-t border-gray-200 hover:bg-gray-50 cursor-pointer"
+                          onClick={() => handlePreview(doc)}
+                        >
+                          <td className="px-6 py-4">
+                            <DraggableDocument
+                              id={doc.id}
+                              name={doc.name}
+                              type={doc.type}
+                              currentFolderId={activeFolder}
+                            />
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-500">{doc.type}</td>
+                          <td className="px-6 py-4 text-sm text-gray-500">{doc.size}</td>
+                          <td className="px-6 py-4 text-sm text-gray-500">{doc.lastModified}</td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              )}
             </div>
           </div>
         </div>
