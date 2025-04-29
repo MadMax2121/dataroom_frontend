@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
-import { Upload, FileText, Search, Plus, Trash2 } from 'lucide-react';
+import { Upload, FileText, Search, Plus, Trash2, MoreVertical } from 'lucide-react';
 import { DroppableFolder } from '../DroppableFolder';
 import { DraggableDocument } from '../DraggableDocument';
 import DocumentPreview from '../DocumentPreview';
@@ -80,6 +80,11 @@ const Documents = () => {
   const [showNewFolderDialog, setShowNewFolderDialog] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
   const [newFolderType, setNewFolderType] = useState<'private' | 'team'>('private');
+  const [renameFolder, setRenameFolder] = useState<{id: string, name: string} | null>(null);
+  const [folderToMove, setFolderToMove] = useState<string | null>(null);
+  const [shareFolder, setShareFolder] = useState<string | null>(null);
+  const [documentRenaming, setDocumentRenaming] = useState<{id: string, name: string} | null>(null);
+  const [menuOpenForDoc, setMenuOpenForDoc] = useState<string | null>(null);
 
   const handleDrop = (documentId: string, fromFolderId: string, toFolderId: string) => {
     setFolders(prevFolders => {
@@ -141,6 +146,95 @@ const Documents = () => {
     }
   };
 
+  const handleRenameFolder = (folderId: string) => {
+    const folder = folders.find(f => f.id === folderId);
+    if (folder) {
+      setRenameFolder({ id: folderId, name: folder.name });
+    }
+  };
+
+  const handleShareFolder = (folderId: string) => {
+    setShareFolder(folderId);
+    // Implement sharing logic
+    console.log(`Sharing folder: ${folderId}`);
+  };
+
+  const handleMoveFolder = (folderId: string) => {
+    setFolderToMove(folderId);
+    // Implement moving logic
+    console.log(`Moving folder: ${folderId}`);
+  };
+
+  // Add document action handlers
+  const handleRenameDocument = (e: React.MouseEvent, documentId: string) => {
+    e.stopPropagation(); // Prevent document preview
+    const document = folders.find(f => f.id === activeFolder)?.documents.find(d => d.id === documentId);
+    if (document) {
+      setDocumentRenaming({ id: documentId, name: document.name });
+    }
+  };
+
+  const saveDocumentRename = () => {
+    if (documentRenaming && documentRenaming.name.trim()) {
+      setFolders(prev => {
+        return prev.map(folder => {
+          if (folder.id === activeFolder) {
+            return {
+              ...folder,
+              documents: folder.documents.map(doc => 
+                doc.id === documentRenaming.id ? { ...doc, name: documentRenaming.name.trim() } : doc
+              )
+            };
+          }
+          return folder;
+        });
+      });
+    }
+    setDocumentRenaming(null);
+  };
+
+  const handleShareDocument = (e: React.MouseEvent, documentId: string) => {
+    e.stopPropagation(); // Prevent document preview
+    // Logic for sharing document
+    console.log(`Sharing document: ${documentId}`);
+    alert(`Sharing options would appear here for document ID: ${documentId}`);
+  };
+
+  const handleMoveDocument = (e: React.MouseEvent, documentId: string) => {
+    e.stopPropagation(); // Prevent document preview
+    // Logic for moving document
+    console.log(`Moving document: ${documentId}`);
+    
+    // Simple implementation using prompt - in a real app, use a modal
+    const targetFolderId = prompt(
+      'Enter the folder ID to move to: ' + 
+      folders.map(f => `${f.id}: ${f.name}`).join(', ')
+    );
+    
+    if (targetFolderId && folders.some(f => f.id === targetFolderId)) {
+      handleDrop(documentId, activeFolder, targetFolderId);
+    }
+  };
+
+  const handleDeleteDocument = (e: React.MouseEvent, documentId: string) => {
+    e.stopPropagation(); // Prevent document preview
+    // Logic for deleting document
+    console.log(`Deleting document: ${documentId}`);
+    if (confirm('Are you sure you want to delete this document?')) {
+      setFolders(prev => {
+        return prev.map(folder => {
+          if (folder.id === activeFolder) {
+            return {
+              ...folder,
+              documents: folder.documents.filter(doc => doc.id !== documentId)
+            };
+          }
+          return folder;
+        });
+      });
+    }
+  };
+
   const activeDocuments = folders.find(f => f.id === activeFolder)?.documents || [];
 
   return (
@@ -154,9 +248,9 @@ const Documents = () => {
           </button>
         </div>
 
-        <div className="flex gap-6">
+        <div className="flex gap-6 w-full">
           {/* Folders Sidebar */}
-          <div className="w-72 space-y-4">
+          <div className="w-72 space-y-4 shrink-0">
             <button
               onClick={() => setShowNewFolderDialog(true)}
               className="w-full flex items-center justify-center px-4 py-2 border-2 border-dashed border-gray-300 rounded-xl text-gray-600 hover:border-blue-500 hover:text-blue-600"
@@ -178,13 +272,16 @@ const Documents = () => {
                   onClick={() => setActiveFolder(folder.id)}
                   onSettingsClick={() => {}}
                   onDeleteClick={folder.id !== 'loaded-documents' ? () => handleDeleteFolder(folder.id) : undefined}
+                  onRenameClick={() => handleRenameFolder(folder.id)}
+                  onShareClick={() => handleShareFolder(folder.id)}
+                  onMoveClick={() => handleMoveFolder(folder.id)}
                 />
               ))}
             </div>
           </div>
 
           {/* Documents List */}
-          <div className="flex-1 bg-white rounded-xl shadow-sm">
+          <div className="flex-1 bg-white rounded-xl shadow-sm min-w-0 overflow-hidden flex flex-col">
             <div className="p-4 border-b border-gray-200">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -196,38 +293,123 @@ const Documents = () => {
               </div>
             </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="text-left text-sm text-gray-500 bg-gray-50">
-                    <th className="px-6 py-3">Name</th>
-                    <th className="px-6 py-3">Type</th>
-                    <th className="px-6 py-3">Size</th>
-                    <th className="px-6 py-3">Last Modified</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {activeDocuments.map((doc) => (
-                    <tr
-                      key={doc.id}
-                      className="border-t border-gray-200 hover:bg-gray-50 cursor-pointer"
-                      onClick={() => handlePreview(doc)}
-                    >
-                      <td className="px-6 py-4">
-                        <DraggableDocument
-                          id={doc.id}
-                          name={doc.name}
-                          type={doc.type}
-                          currentFolderId={activeFolder}
-                        />
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-500">{doc.type}</td>
-                      <td className="px-6 py-4 text-sm text-gray-500">{doc.size}</td>
-                      <td className="px-6 py-4 text-sm text-gray-500">{doc.lastModified}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="flex-1 overflow-auto">
+              <div className="min-w-full">
+                <div className="flex flex-col">
+                  <table className="w-full" style={{ tableLayout: 'fixed', borderCollapse: 'collapse' }}>
+                    <colgroup>
+                      <col style={{ width: '50%' }} />
+                      <col style={{ width: '15%' }} />
+                      <col style={{ width: '35%' }} />
+                    </colgroup>
+                    <thead className="bg-gray-50 sticky top-0">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-sm font-medium text-gray-500">
+                          Name
+                        </th>
+                        <th className="px-6 py-3 text-left text-sm font-medium text-gray-500">
+                          Size
+                        </th>
+                        <th className="px-6 py-3 text-left text-sm font-medium text-gray-500">
+                          Last Modified
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {activeDocuments.length === 0 ? (
+                        <tr>
+                          <td colSpan={3} className="px-6 py-8 text-center text-gray-500">
+                            No documents found.
+                          </td>
+                        </tr>
+                      ) : (
+                        activeDocuments.map(doc => (
+                          <tr
+                            key={doc.id}
+                            className="hover:bg-gray-50 cursor-pointer border-t border-gray-200"
+                            onClick={() => handlePreview(doc)}
+                          >
+                            <td className="px-6 py-4">
+                              <div className="flex items-center">
+                                {doc.type === 'PDF' ? (
+                                  <FileText className="w-6 h-6 mr-3 text-red-500" />
+                                ) : (
+                                  <FileText className="w-6 h-6 mr-3 text-gray-500" />
+                                )}
+                                <span className="text-sm font-medium text-gray-900 truncate">{doc.name}</span>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 text-sm text-gray-500">
+                              {doc.size}
+                            </td>
+                            <td className="px-6 py-4 text-sm text-gray-500">
+                              <div className="flex justify-between items-center">
+                                <span>{doc.lastModified}</span>
+                                <div className="relative inline-block">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setMenuOpenForDoc(menuOpenForDoc === doc.id ? null : doc.id);
+                                    }}
+                                    className="ml-4 p-1 hover:bg-gray-100 rounded-full"
+                                  >
+                                    <MoreVertical size={18} className="text-gray-500" />
+                                  </button>
+                                  
+                                  {menuOpenForDoc === doc.id && (
+                                    <div className="absolute right-0 mt-1 z-10 bg-white rounded-md shadow-lg border border-gray-200 py-1 w-44">
+                                      <button 
+                                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setMenuOpenForDoc(null);
+                                          handleRenameDocument(e, doc.id);
+                                        }}
+                                      >
+                                        Rename
+                                      </button>
+                                      <button 
+                                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setMenuOpenForDoc(null);
+                                          handleShareDocument(e, doc.id);
+                                        }}
+                                      >
+                                        Share
+                                      </button>
+                                      <button 
+                                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setMenuOpenForDoc(null);
+                                          handleMoveDocument(e, doc.id);
+                                        }}
+                                      >
+                                        Move
+                                      </button>
+                                      <button 
+                                        className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setMenuOpenForDoc(null);
+                                          handleDeleteDocument(e, doc.id);
+                                        }}
+                                      >
+                                        Delete
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -283,6 +465,46 @@ const Documents = () => {
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
                 >
                   Create
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Rename Folder Dialog */}
+        {renameFolder && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-xl p-6 w-96">
+              <h2 className="text-lg font-semibold mb-4">Rename Folder</h2>
+              <input
+                type="text"
+                value={renameFolder.name}
+                onChange={(e) => setRenameFolder({...renameFolder, name: e.target.value})}
+                placeholder="Folder name"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg mb-4"
+                autoFocus
+              />
+              <div className="flex justify-end space-x-2">
+                <button
+                  onClick={() => setRenameFolder(null)}
+                  className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    if (renameFolder.name.trim()) {
+                      setFolders(prev => 
+                        prev.map(f => 
+                          f.id === renameFolder.id ? {...f, name: renameFolder.name.trim()} : f
+                        )
+                      );
+                      setRenameFolder(null);
+                    }
+                  }}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                >
+                  Save
                 </button>
               </div>
             </div>

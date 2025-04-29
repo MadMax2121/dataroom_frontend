@@ -83,7 +83,7 @@ export const authOptions: NextAuthOptions = {
           try {
             // Register or login with the backend - handles account linking by email
             // Use direct axios call to avoid auth token requirements on this endpoint
-            const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+            const backendUrl = process.env.NEXT_PUBLIC_API_URL;
             console.log("Attempting to authenticate with backend:", `${backendUrl}/users/oauth/google`);
             
             const response = await axios.post(`${backendUrl}/users/oauth/google`, {
