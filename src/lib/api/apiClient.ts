@@ -75,6 +75,7 @@ export interface Document {
   file_type: string;
   file_size: number;
   tags?: string[];
+  folder_id?: number;
   created_at: string;
   updated_at: string;
   created_by: number;
@@ -163,6 +164,7 @@ export const createDocument = (data: {
   description?: string;
   file: File;
   tags?: string[];
+  folder_id?: number | string;
 } | FormData) => {
   let formData: FormData;
   
@@ -186,6 +188,11 @@ export const createDocument = (data: {
         formData.append(`tags[${index}]`, tag);
       });
     }
+    
+    if (data.folder_id) {
+      formData.append('folder_id', data.folder_id.toString());
+    }
+    
     console.log('Created new FormData from object');
   }
   
@@ -209,8 +216,8 @@ export const updateDocument = (documentId: number | string, data: {
 export const deleteDocument = (documentId: number | string) =>
   axiosClient.delete(`/documents/${documentId}`).then(res => res.data);
 
-export const downloadDocument = (documentId: number | string) => {
-  console.log(`Preparing to download document ${documentId}`);
+export const downloadDocument = (documentId: number | string, customFilename?: string) => {
+  console.log(`Preparing to download document ${documentId}${customFilename ? ` as "${customFilename}"` : ''}`);
   
   // Get the base URL
   const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
@@ -226,18 +233,27 @@ export const downloadDocument = (documentId: number | string) => {
       const link = document.createElement('a');
       
       // Add token as query parameter for direct download if available
-      link.href = session?.accessToken 
+      let url = session?.accessToken 
         ? `${downloadUrl}?token=${session.accessToken}` 
         : downloadUrl;
+      
+      // Add custom filename if provided - use exact filename without modification
+      if (customFilename) {
+        // Ensure we're using the exact filename format without any transformations
+        url += `${url.includes('?') ? '&' : '?'}filename=${encodeURIComponent(customFilename)}`;
         
-      link.setAttribute('download', ''); // Let the server set the filename
+        // Set the download attribute with the exact filename to prevent browser/backend renaming
+        link.setAttribute('download', customFilename);
+      }
+      
+      link.href = url;
       
       // Attach to document, click, and clean up
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       
-      resolve({ success: true });
+      resolve({ success: true, filename: customFilename || 'document' });
     } catch (error) {
       console.error('Error initiating download:', error);
       reject(error);
@@ -274,10 +290,30 @@ export const deleteFolder = (folderId: number | string) =>
 export const getFolderDocuments = (folderId: number | string) =>
   axiosClient.get(`/folders/${folderId}/documents`).then(res => res.data);
 
-export const moveDocument = (documentId: number | string, folderId: number | string) =>
-  axiosClient.post(`/folders/${folderId}/documents`, { 
-    documentId: typeof documentId === 'string' ? parseInt(documentId) : documentId 
-  }).then(res => res.data);
+export const moveDocument = (documentId: number | string, folderId: number | string) => {
+  console.log(`Moving document ${documentId} to folder ${folderId}`);
+  
+  // Convert string IDs to numbers if necessary
+  const docId = typeof documentId === 'string' ? parseInt(documentId) : documentId;
+  const folId = typeof folderId === 'string' ? parseInt(folderId) : folderId;
+  
+  return axiosClient.post(`/folders/${folId}/documents`, { 
+    documentId: docId
+  }).then(res => {
+    console.log('Document moved successfully:', res.data);
+    // Adding more detailed logging to help diagnose issues
+    if (res.data?.data?.document) {
+      console.log('API returned complete document data');
+    } else {
+      console.log('API response missing document data - using fallback');
+    }
+    // Return the full response with document data
+    return res.data;
+  }).catch(error => {
+    console.error('Error moving document:', error);
+    throw error;
+  });
+};
 
 // Default export
 export default axiosClient; 
