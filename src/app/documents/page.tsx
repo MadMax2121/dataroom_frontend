@@ -550,7 +550,7 @@ const mapApiDocumentToFrontend = (doc: any): Document => {
     }
   };
 
-  // Update file selection handler to immediately upload files without showing review modal
+  // Update file selection handler to show review modal instead of immediate upload
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       // Check if any folders exist
@@ -574,13 +574,11 @@ const mapApiDocumentToFrontend = (doc: any): Document => {
       
       setSelectedFiles(newFiles);
       setPreUploadModalOpen(false);
-      
-      // Start upload process immediately
-      handleMultipleUpload(newFiles);
+      setUploadModalOpen(true); // Show the review modal instead of immediate upload
     }
   };
 
-  // Update file drop handler to immediately upload files
+  // Update file drop handler to show review modal instead of immediate upload
   const handleFileDrop = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -620,9 +618,7 @@ const mapApiDocumentToFrontend = (doc: any): Document => {
       
       setSelectedFiles(newFiles);
       setPreUploadModalOpen(false);
-      
-      // Start upload process immediately
-      handleMultipleUpload(newFiles);
+      setUploadModalOpen(true); // Show the review modal instead of immediate upload
     }
   };
 
@@ -1893,6 +1889,145 @@ const mapApiDocumentToFrontend = (doc: any): Document => {
                 <button
                   className="px-8 py-3 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700"
                   onClick={() => fileInputRef.current?.click()}
+                >
+                  Save
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Add the File Review Modal */}
+        {uploadModalOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-xl p-8 w-[800px] max-w-[95%] max-h-[90vh] overflow-y-auto">
+              <div className="flex justify-between items-start mb-6">
+                <div>
+                  <h2 className="text-2xl font-semibold text-gray-800">Add a document</h2>
+                  <p className="text-gray-500 mt-1">{selectedFiles.length} files selected</p>
+                </div>
+                <div className="flex items-start">
+                  <div className="flex items-center mr-5">
+                    <div className="w-6 h-6 rounded-full flex items-center justify-center bg-indigo-100 mr-2">
+                      <Loader className="w-3 h-3 text-indigo-600" />
+                    </div>
+                    <div className="text-xs">
+                      <div className="font-medium">SVDR Smart Tagging AI</div>
+                      <div className="text-gray-500 text-[10px] max-w-[200px]">Automatically generate and apply relevant tags to your document for easier organization and faster search.</div>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={() => setUploadModalOpen(false)}
+                    className="text-gray-500 hover:text-gray-700 ml-4"
+                  >
+                    <X className="w-6 h-6" />
+                  </button>
+                </div>
+              </div>
+              
+              <div className="mb-10 border border-dashed border-gray-200 rounded-lg p-6">
+                <div className="flex flex-col gap-4">
+                  {selectedFiles.map((file, index) => (
+                    <div key={index} className="flex items-center justify-between py-4 border-b border-gray-100 last:border-0">
+                      <div className="flex items-center flex-grow">
+                        {getIcon(file.file.name.split('.').pop() || '', 'w-6 h-6 text-gray-500 mr-3')}
+                        <span className="text-gray-800 font-medium">{file.file.name}</span>
+                        
+                        {file.tags && file.tags.length > 0 && (
+                          <div className="flex items-center ml-4">
+                            <div className="flex flex-wrap gap-2">
+                              {file.tags.map((tag, tagIndex) => (
+                                <div key={tagIndex} className="flex items-center bg-indigo-100 text-indigo-800 text-xs px-2 py-1 rounded">
+                                  {tag}
+                                  <button
+                                    onClick={() => {
+                                      setSelectedFiles(prev => prev.map((f, i) => 
+                                        i === index ? 
+                                          { ...f, tags: f.tags.filter((_, ti) => ti !== tagIndex) } : 
+                                          f
+                                      ));
+                                    }}
+                                    className="ml-1 text-indigo-600 hover:text-indigo-800"
+                                  >
+                                    <X className="w-3 h-3" />
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div className="flex items-center min-w-[240px] justify-end">
+                        {showTagInput[index] ? (
+                          <div className="flex mr-4">
+                            <input
+                              type="text"
+                              value={tagInputs[index] || ''}
+                              onChange={(e) => handleTagInputChange(index, e.target.value)}
+                              onKeyDown={(e) => handleTagKeyDown(e, index)}
+                              className="text-xs p-1 border border-gray-300 rounded"
+                              autoFocus
+                              placeholder="Press enter to add"
+                            />
+                          </div>
+                        ) : null}
+                        
+                        <span className="text-gray-500 mr-4">
+                          {formatFileSize(file.file.size)}
+                        </span>
+                        <button
+                          onClick={() => removeFile(index)}
+                          className="text-gray-400 hover:text-red-500 mr-3"
+                        >
+                          <X className="w-5 h-5" />
+                        </button>
+                        
+                        <button
+                          onClick={() => toggleTagInput(index)}
+                          className="text-sm text-gray-500 hover:text-indigo-600 whitespace-nowrap"
+                        >
+                          + Add Tags
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              
+              <div className="flex items-center justify-end gap-3">
+                <button
+                  onClick={() => {
+                    const fileInput = document.createElement('input');
+                    fileInput.type = 'file';
+                    fileInput.multiple = true;
+                    fileInput.accept = '.pdf,.xls,.xlsx,.csv,.ods,.png,.jpeg,.jpg,.ppt,.pptx';
+                    fileInput.onchange = (e) => {
+                      if (e.target instanceof HTMLInputElement && e.target.files) {
+                        const files = e.target.files;
+                        // Create a synthetic event object that matches what handleFileSelect expects
+                        const syntheticEvent = {
+                          target: {
+                            files: files
+                          },
+                          preventDefault: () => {},
+                          stopPropagation: () => {}
+                        } as React.ChangeEvent<HTMLInputElement>;
+                        handleFileSelect(syntheticEvent);
+                      }
+                    };
+                    fileInput.click();
+                  }}
+                  className="px-8 py-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300"
+                >
+                  Upload more
+                </button>
+                <button
+                  onClick={() => {
+                    setUploadModalOpen(false);
+                    handleMultipleUpload();
+                  }}
+                  className="px-8 py-2 text-white bg-indigo-600 rounded-lg hover:bg-indigo-700"
                 >
                   Save
                 </button>
